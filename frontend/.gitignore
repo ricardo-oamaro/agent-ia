@@ -1,0 +1,23 @@
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+pnpm-lock.yaml
+dist/
+coverage/
+
+# 🧰 OS / Misc
+.DS_Store
+Thumbs.db
+
+# 🚀 Local configs
+.env.local
+.env.development
+.env.production
+.env.test
+*.swp
+
+# 🧾 Other
+frontend/.env
+backend/.env

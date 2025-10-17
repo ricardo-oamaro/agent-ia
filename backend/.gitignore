@@ -1,0 +1,15 @@
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pkl
+*.sqlite3
+*.log
+*.DS_Store
+.env
+.venv/
+.idea/
+.vscode/
+*.egg-info/
+dist/
+build/
