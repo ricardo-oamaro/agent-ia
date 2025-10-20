@@ -39,56 +39,79 @@ def fetch_google_news(companies: List[str]) -> List[Dict[str, str]]:
 
     for company in companies:
         url = f"https://news.google.com/rss/search?q={company}&hl=pt-BR&gl=BR&ceid=BR:pt"
+        print(f"🔍 Buscando notícias para: {company} → {url}")
+
         try:
             r = httpx.get(url, timeout=10, follow_redirects=True)
             r.raise_for_status()
-            soup = _soup_xml(r.content)
+            soup = BeautifulSoup(r.content, "xml")
             items = soup.find_all("item")
 
             for it in items[:10]:
                 title = (it.title.text or "").strip() if it.title else ""
                 link_google = (it.link.text or "").strip() if it.link else ""
                 raw_description = (it.description.text or "").strip() if it.description else ""
+
+                # 🔹 Limpa HTML residual da descrição
                 try:
                     desc_soup = BeautifulSoup(raw_description, "html.parser")
                     description = desc_soup.get_text(" ", strip=True)
                 except Exception:
                     description = raw_description
 
-                article_url = _first_publisher_link(description) or link_google
+                # 🔹 Extrai link real da matéria (link do publisher)
+                a_tag = BeautifulSoup(raw_description, "html.parser").find("a", href=True)
+                article_url = a_tag["href"].strip() if a_tag else link_google
                 if not title or not article_url:
                     continue
-                
+
+                # 🔹 Extrai nome da fonte (publisher)
+                source_name = ""
+                try:
+                    font_tag = BeautifulSoup(raw_description, "html.parser").find("font")
+                    if font_tag:
+                        source_name = font_tag.get_text(strip=True)
+                except Exception:
+                    pass
+
+                # 🔹 Extrai data (vários formatos possíveis)
                 published_at = None
                 try:
-                    pub_date_tag = it.find("pubDate") or it.find("dc:date")
+                    pub_date_tag = (
+                        it.find("pubDate") or it.find("dc:date") or it.find("updated")
+                    )
                     if pub_date_tag and pub_date_tag.text:
                         date_text = pub_date_tag.text.strip()
-
-                        # Tenta os formatos mais comuns
-                        for fmt in ("%a, %d %b %Y %H:%M:%S %Z", "%Y-%m-%dT%H:%M:%S%z"):
+                        for fmt in (
+                            "%a, %d %b %Y %H:%M:%S %Z",  # Wed, 16 Oct 2025 13:14:00 GMT
+                            "%Y-%m-%dT%H:%M:%S%z",     # 2025-10-16T13:14:00+0000
+                            "%Y-%m-%dT%H:%M:%SZ",      # 2025-10-16T13:14:00Z
+                        ):
                             try:
                                 dt = datetime.strptime(date_text, fmt)
                                 published_at = dt.strftime("%d/%m/%Y %H:%M")
                                 break
                             except Exception:
                                 continue
-
-                        # fallback: mantém o texto cru
                         if not published_at:
                             published_at = date_text
                 except Exception as e:
-                    print(f"⚠️ Erro ao ler data: {e}")
+                    print(f"⚠️ Erro ao ler data de {company}: {e}")
 
+                # 🔹 Loga o item encontrado
+                print(f"🕒 {company} → {title[:50]}... → {published_at or 'sem data'}")
+
+                # 🔹 Monta o dicionário compatível com o modelo
                 results.append({
                     "company": company,
                     "title": title,
                     "description": description,
                     "url": article_url,
-                    "fonte": "Google News",
+                    "fonte": source_name or "Google News",
                     "fonte_type": "google",
                     "published_at": published_at,
                 })
+
         except Exception as e:
             print(f"⚠️ Erro ao buscar Google News para {company}: {e}")
 
