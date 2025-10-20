@@ -3,6 +3,7 @@ import httpx
 from bs4 import BeautifulSoup
 from typing import List, Dict
 from dotenv import load_dotenv
+from datetime import datetime
 
 # 🔹 Carrega variáveis de ambiente (.env)
 load_dotenv()
@@ -47,11 +48,37 @@ def fetch_google_news(companies: List[str]) -> List[Dict[str, str]]:
             for it in items[:10]:
                 title = (it.title.text or "").strip() if it.title else ""
                 link_google = (it.link.text or "").strip() if it.link else ""
-                description = (it.description.text or "").strip() if it.description else ""
+                raw_description = (it.description.text or "").strip() if it.description else ""
+                try:
+                    desc_soup = BeautifulSoup(raw_description, "html.parser")
+                    description = desc_soup.get_text(" ", strip=True)
+                except Exception:
+                    description = raw_description
 
                 article_url = _first_publisher_link(description) or link_google
                 if not title or not article_url:
                     continue
+                
+                published_at = None
+                try:
+                    pub_date_tag = it.find("pubDate") or it.find("dc:date")
+                    if pub_date_tag and pub_date_tag.text:
+                        date_text = pub_date_tag.text.strip()
+
+                        # Tenta os formatos mais comuns
+                        for fmt in ("%a, %d %b %Y %H:%M:%S %Z", "%Y-%m-%dT%H:%M:%S%z"):
+                            try:
+                                dt = datetime.strptime(date_text, fmt)
+                                published_at = dt.strftime("%d/%m/%Y %H:%M")
+                                break
+                            except Exception:
+                                continue
+
+                        # fallback: mantém o texto cru
+                        if not published_at:
+                            published_at = date_text
+                except Exception as e:
+                    print(f"⚠️ Erro ao ler data: {e}")
 
                 results.append({
                     "company": company,
@@ -59,7 +86,8 @@ def fetch_google_news(companies: List[str]) -> List[Dict[str, str]]:
                     "description": description,
                     "url": article_url,
                     "fonte": "Google News",
-                    "fonte_type": "google"
+                    "fonte_type": "google",
+                    "published_at": published_at,
                 })
         except Exception as e:
             print(f"⚠️ Erro ao buscar Google News para {company}: {e}")

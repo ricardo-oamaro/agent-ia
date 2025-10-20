@@ -1,16 +1,18 @@
-# Backend - FastAPI
-FROM python:3.11-slim
+# Etapa 1: build da imagem Python
+FROM python:3.11-slim AS backend
 
+# Define diretório de trabalho
 WORKDIR /app
 
-# Evita cache de bytecode e flush imediato de logs
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
+# Copia os arquivos necessários
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
 COPY . .
 
+# Instala dependências
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expõe a porta 8000 (FastAPI)
 EXPOSE 8000
+
+# Define o comando de execução
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

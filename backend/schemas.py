@@ -11,3 +11,4 @@ class NewsItem(BaseModel):
     url: str
     fonte: str  # Nome da fonte legível
     fonte_type: str 
+    published_at: Optional[str] = None
