@@ -37,3 +37,4 @@ Thumbs.db
 # 🧾 Other
 frontend/.env
 backend/.env
+aux/

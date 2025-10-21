@@ -147,6 +147,20 @@ def fetch_linkedin_posts(company: str) -> List[Dict[str, str]]:
             return results
 
         data = r.json()
+        
+        # 🔹 Extrai data do search_metadata (created_at)
+        search_created_at = None
+        try:
+            search_metadata = data.get("search_metadata", {})
+            created_at_text = search_metadata.get("created_at", "")
+            if created_at_text:
+                # Formato: "2025-10-21 18:58:25 UTC"
+                dt = datetime.strptime(created_at_text, "%Y-%m-%d %H:%M:%S UTC")
+                search_created_at = dt.strftime("%d/%m/%Y %H:%M")
+                print(f"📅 LinkedIn {company}: Data da busca - {search_created_at}")
+        except Exception as e:
+            print(f"⚠️ Erro ao processar created_at do LinkedIn para {company}: {e}")
+        
         for item in data.get("organic_results", []):
             results.append({
                 "company": company,
@@ -154,7 +168,8 @@ def fetch_linkedin_posts(company: str) -> List[Dict[str, str]]:
                 "description": item.get("snippet", ""),
                 "url": item.get("link", ""),
                 "fonte": "LinkedIn",
-                "fonte_type": "linkedin"
+                "fonte_type": "linkedin",
+                "published_at": search_created_at,  # Usa a data da busca como referência
             })
         print(f"🔗 LinkedIn: {len(results)} resultados para {company}")
     except Exception as e:
