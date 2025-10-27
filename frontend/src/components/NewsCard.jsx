@@ -8,6 +8,22 @@ function badgeColor(type) {
             return "bg-blue-100 text-blue-700";
         case "linkedin":
             return "bg-indigo-100 text-indigo-700";
+        case "g1":
+            return "bg-green-100 text-green-700";
+        case "infomoney":
+            return "bg-yellow-100 text-yellow-700";
+        case "uol":
+            return "bg-cyan-100 text-cyan-700";
+        case "reuters":
+            return "bg-red-100 text-red-700";
+        case "yahoo":
+            return "bg-purple-100 text-purple-700";
+        case "duckduckgo":
+            return "bg-orange-100 text-orange-700";
+        case "bing":
+            return "bg-teal-100 text-teal-700";
+        case "company_website":
+            return "bg-emerald-100 text-emerald-700 font-bold";
         default:
             return "bg-gray-100 text-gray-600";
     }
@@ -71,14 +87,7 @@ export default function NewsCard({ item }) {
                 {/* 🔹 Rodapé: data + origem */}
                 <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
                     <span>{item.published_at ? `🕒 ${timeAgo(item.published_at)}` : ""}</span>
-                    <span>
-                        📎{" "}
-                        {item.fonte_type === "google"
-                            ? "Google News"
-                            : item.fonte_type === "linkedin"
-                            ? "LinkedIn"
-                            : "Fonte desconhecida"}
-                    </span>
+                    <span className="font-medium">📎 {item.fonte}</span>
                 </div>
             </div>
         </a>
